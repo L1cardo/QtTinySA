@@ -35,15 +35,19 @@ jobs:
             wget http://ports.ubuntu.com/ubuntu-ports/pool/main/p/python3.12/python3.12_3.12.3-1_arm64.deb
             mkdir -p arm64-python
             dpkg-deb -x python3.12_3.12.3-1_arm64.deb arm64-python
+            # 下载 ARM64 libc6 软件包
+            wget http://ports.ubuntu.com/ubuntu-ports/pool/main/g/glibc/libc6_2.39-0ubuntu8_arm64.deb
+            mkdir -p arm64-libs
+            dpkg-deb -x libc6_2.39-0ubuntu8_arm64.deb arm64-libs
             # 验证 ld-linux-aarch64.so.1 存在
-            ls -l arm64-python/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 || echo "ld-linux-aarch64.so.1 not found"
+            ls -l arm64-libs/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 || echo "ld-linux-aarch64.so.1 not found in arm64-libs"
             # 设置 LD_LIBRARY_PATH
-            export LD_LIBRARY_PATH=$(pwd)/arm64-python/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH
+            export LD_LIBRARY_PATH=$(pwd)/arm64-libs/lib/aarch64-linux-gnu:$(pwd)/arm64-python/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH
             echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
             # 测试 QEMU 是否能运行 Python
             qemu-aarch64-static ./arm64-python/usr/bin/python3.12 --version || exit 1
             # 安装 ARM64 依赖
-            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user --upgrade pip
+            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user --upgrade pip || exit 1
             qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user pyinstaller==6.12.0 -r src/requirements.txt || exit 1
           else
             python -m pip install --upgrade pip
