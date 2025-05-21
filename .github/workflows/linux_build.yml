@@ -30,25 +30,22 @@ jobs:
         if: matrix.arch == 'arm64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-user-static gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu libc6-dev-arm64-cross
-          export CC=aarch64-linux-gnu-gcc
-          export CXX=aarch64-linux-gnu-g++
-          export PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig
-          echo "CC=aarch64-linux-gnu-gcc" >> $GITHUB_ENV
-          echo "CXX=aarch64-linux-gnu-g++" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig" >> $GITHUB_ENV
+          sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu
+          sudo update-binfmts --enable qemu-aarch64
 
-      - name: Build with PyInstaller (${{ matrix.arch }})
+      - name: Build with PyInstaller (x86_64)
+        if: matrix.arch == 'x86_64'
         run: |
           cd src
-          if [ "${{ matrix.arch }}" = "arm64" ]; then
-            export PIP_TARGET=./python_modules
-            pip install --target ./python_modules -r requirements.txt
-            sed -i "s/target_arch=None/target_arch='${{ matrix.arch }}'/" QtTinySA.spec
-            pyinstaller QtTinySA.spec
-          else
-            pyinstaller QtTinySA.spec
-          fi
+          python3 -m PyInstaller QtTinySA.spec
+          cd ..
+      
+      - name: Build with PyInstaller (ARM64 with QEMU)
+        if: matrix.arch == 'arm64'
+        run: |
+          cd src
+          qemu-aarch64-static python3 -m PyInstaller QtTinySA.spec
+          mv dist/QtTinySA dist/QtTinySA_arm64
           cd ..
 
       - name: Verify binary architecture (${{ matrix.arch }})
@@ -59,5 +56,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: QtTinySA_linux_${{ matrix.arch }}
-          path: src/dist/QtTinySA
+          path: src/dist/QtTinySA_${{ matrix.arch }}
           if-no-files-found: error
