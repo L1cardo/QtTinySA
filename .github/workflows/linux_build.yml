@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12 (for x86_64)
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -35,10 +35,10 @@ jobs:
             wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tar.xz
             tar -xf Python-3.12.3.tar.xz
             cd Python-3.12.3
-            # 配置交叉编译
-            ./configure --host=aarch64-linux-gnu --build=x86_64-linux-gnu --prefix=$(pwd)/../arm64-python CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ --enable-optimizations --with-lto --disable-ipv6
-            make -j$(nproc)
-            make install
+            # 配置交叉编译，使用 x86_64 Python
+            ./configure --host=aarch64-linux-gnu --build=x86_64-linux-gnu --prefix=$(pwd)/../arm64-python CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ --enable-optimizations --with-lto --disable-ipv6 --with-build-python=python3
+            make -j$(nproc) || exit 1
+            make install || exit 1
             cd ..
             # 验证编译的 Python
             qemu-aarch64-static ./arm64-python/bin/python3.12 --version || exit 1
