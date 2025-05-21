@@ -35,7 +35,8 @@ jobs:
       - name: Build with PyInstaller (${{ matrix.arch }})
         run: |
           cd src
-          sed -i "/a.datas,/a \        target_arch='${{ matrix.arch }}'," QtTinySA.spec
+          cp QtTinySA.spec QtTinySA.spec.orig
+          awk '/exe = EXE\(/{print; found=1; next} found && /\)/{print "        target_arch=\"'"${{ matrix.arch }}"'\","; found=0} {print}' QtTinySA.spec.orig > QtTinySA.spec
           pyinstaller QtTinySA.spec
           cd ..
 
