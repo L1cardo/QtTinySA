@@ -26,9 +26,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu build-essential python3-dev libatlas-base-dev gfortran zlib1g-dev libssl-dev libffi-dev libbz2-dev libreadline-dev libsqlite3-dev libncurses5-dev liblzma-dev
-          # 安装 ARM64 特定的开发库
-          sudo dpkg --add-architecture arm64
-          sudo apt-get update
           sudo apt-get install -y libc6-dev:arm64 libssl-dev:arm64 libffi-dev:arm64 libbz2-dev:arm64 libreadline-dev:arm64 libsqlite3-dev:arm64 libncurses5-dev:arm64
           sudo update-binfmts --enable qemu-aarch64
 
