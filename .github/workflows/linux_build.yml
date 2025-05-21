@@ -35,7 +35,8 @@ jobs:
       - name: Build with PyInstaller (${{ matrix.arch }})
         run: |
           cd src
-          pyinstaller QtTinySA.spec --target-arch=${{ matrix.arch }}
+          sed -i "/exe = EXE(/a \    target_arch='${{ matrix.arch }}'," QtTinySA.spec
+          pyinstaller QtTinySA.spec
           cd ..
 
       - name: Upload artifact (${{ matrix.arch }})
