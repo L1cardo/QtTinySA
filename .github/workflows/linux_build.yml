@@ -35,7 +35,7 @@ jobs:
       - name: Build with PyInstaller (${{ matrix.arch }})
         run: |
           cd src
-          sed -i "/exe = EXE(/a \    target_arch='${{ matrix.arch }}'," QtTinySA.spec
+          sed -i "/a.datas,/a \        target_arch='${{ matrix.arch }}'," QtTinySA.spec
           pyinstaller QtTinySA.spec
           cd ..
 
