@@ -30,22 +30,18 @@ jobs:
         if: matrix.arch == 'arm64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu
-          sudo update-binfmts --enable qemu-aarch64
-
-      - name: Build with PyInstaller (x86_64)
-        if: matrix.arch == 'x86_64'
-        run: |
-          cd src
-          python3 -m PyInstaller QtTinySA.spec
-          cd ..
+          sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu binfmt-support build-essential python3-dev
+          sudo update-binfmts --enable qemu-aarch64 || echo "binfmt-support already enabled or not needed"
       
-      - name: Build with PyInstaller (ARM64 with QEMU)
-        if: matrix.arch == 'arm64'
+      - name: Build with PyInstaller (${{ matrix.arch }})
         run: |
           cd src
-          qemu-aarch64-static python3 -m PyInstaller QtTinySA.spec
-          mv dist/QtTinySA dist/QtTinySA_arm64
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            qemu-aarch64-static pyinstaller QtTinySA.spec
+          else
+            pyinstaller QtTinySA.spec
+          fi
+          mv dist/QtTinySA dist/QtTinySA_${{ matrix.arch }}
           cd ..
 
       - name: Verify binary architecture (${{ matrix.arch }})
