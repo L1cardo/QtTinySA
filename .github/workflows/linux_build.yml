@@ -16,7 +16,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.12 (for x86_64)
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -31,24 +31,20 @@ jobs:
       - name: Install dependencies (${{ matrix.arch }})
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            # 下载完整的 ARM64 Python 3.12 软件包
-            wget http://ports.ubuntu.com/ubuntu-ports/pool/main/p/python3.12/python3.12_3.12.3-1_arm64.deb
-            mkdir -p arm64-python
-            dpkg-deb -x python3.12_3.12.3-1_arm64.deb arm64-python
-            # 下载 ARM64 libc6 软件包
-            wget http://ports.ubuntu.com/ubuntu-ports/pool/main/g/glibc/libc6_2.39-0ubuntu8_arm64.deb
-            mkdir -p arm64-libs
-            dpkg-deb -x libc6_2.39-0ubuntu8_arm64.deb arm64-libs
-            # 验证 ld-linux-aarch64.so.1 存在
-            ls -l arm64-libs/lib/aarch64-linux-gnu/ld-linux-aarch64.so.1 || echo "ld-linux-aarch64.so.1 not found in arm64-libs"
-            # 设置 LD_LIBRARY_PATH
-            export LD_LIBRARY_PATH=$(pwd)/arm64-libs/lib/aarch64-linux-gnu:$(pwd)/arm64-python/lib/aarch64-linux-gnu:$LD_LIBRARY_PATH
-            echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
-            # 测试 QEMU 是否能运行 Python
-            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 --version || exit 1
+            # 下载 Python 3.12 源代码
+            wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tar.xz
+            tar -xf Python-3.12.3.tar.xz
+            cd Python-3.12.3
+            # 配置交叉编译
+            ./configure --host=aarch64-linux-gnu --build=x86_64-linux-gnu --prefix=$(pwd)/../arm64-python CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ --enable-optimizations --with-lto --disable-ipv6
+            make -j$(nproc)
+            make install
+            cd ..
+            # 验证编译的 Python
+            qemu-aarch64-static ./arm64-python/bin/python3.12 --version || exit 1
             # 安装 ARM64 依赖
-            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user --upgrade pip || exit 1
-            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user pyinstaller==6.12.0 -r src/requirements.txt || exit 1
+            qemu-aarch64-static ./arm64-python/bin/python3.12 -m pip install --user --upgrade pip || exit 1
+            qemu-aarch64-static ./arm64-python/bin/python3.12 -m pip install --user pyinstaller==6.12.0 -r src/requirements.txt || exit 1
           else
             python -m pip install --upgrade pip
             pip install pyinstaller==6.12.0 -r src/requirements.txt
@@ -58,7 +54,7 @@ jobs:
         run: |
           cd src
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            qemu-aarch64-static ../arm64-python/usr/bin/python3.12 -m PyInstaller QtTinySA.spec
+            qemu-aarch64-static ../arm64-python/bin/python3.12 -m PyInstaller QtTinySA.spec
           else
             python3 -m PyInstaller QtTinySA.spec
           fi
