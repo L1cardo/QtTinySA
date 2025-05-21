@@ -44,11 +44,16 @@ jobs:
           if [ "${{ matrix.arch }}" = "arm64" ]; then
             export PIP_TARGET=./python_modules
             pip install --target ./python_modules -r requirements.txt
+            sed -i "s/target_arch=None/target_arch='${{ matrix.arch }}'/" QtTinySA.spec
             pyinstaller QtTinySA.spec
           else
             pyinstaller QtTinySA.spec
           fi
           cd ..
+
+      - name: Verify binary architecture (${{ matrix.arch }})
+        run: |
+          file src/dist/QtTinySA
 
       - name: Upload artifact (${{ matrix.arch }})
         uses: actions/upload-artifact@v4
