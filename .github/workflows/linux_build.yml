@@ -25,7 +25,11 @@ jobs:
         if: matrix.arch == 'arm64'
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu binfmt-support build-essential python3-dev
+          sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu g++-aarch64-linux-gnu build-essential python3-dev libatlas-base-dev gfortran zlib1g-dev libssl-dev libffi-dev libbz2-dev libreadline-dev libsqlite3-dev libncurses5-dev liblzma-dev
+          # 安装 ARM64 特定的开发库
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y libc6-dev:arm64 libssl-dev:arm64 libffi-dev:arm64 libbz2-dev:arm64 libreadline-dev:arm64 libsqlite3-dev:arm64 libncurses5-dev:arm64
           sudo update-binfmts --enable qemu-aarch64
 
       - name: Install dependencies (${{ matrix.arch }})
@@ -35,9 +39,9 @@ jobs:
             wget https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tar.xz
             tar -xf Python-3.12.3.tar.xz
             cd Python-3.12.3
-            # 配置交叉编译，使用 x86_64 Python
-            ./configure --host=aarch64-linux-gnu --build=x86_64-linux-gnu --prefix=$(pwd)/../arm64-python CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ --enable-optimizations --with-lto --disable-ipv6 --with-build-python=python3
-            make -j$(nproc) || exit 1
+            # 配置交叉编译
+            ./configure --host=aarch64-linux-gnu --build=x86_64-linux-gnu --prefix=$(pwd)/  --prefix=$(pwd)/../arm64-python CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ CFLAGS="-I/usr/aarch64-linux-gnu/include" LDFLAGS="-L/usr/aarch64-linux-gnu/lib" --enable-optimizations --with-lto --disable-ipv6 --with-build-python=python3
+            make -j$(nproc) || { cat config.log; exit 1; }
             make install || exit 1
             cd ..
             # 验证编译的 Python
