@@ -28,11 +28,14 @@ jobs:
           sudo apt-get install -y qemu-user-static binutils-aarch64-linux-gnu binfmt-support build-essential python3-dev
           sudo update-binfmts --enable qemu-aarch64
 
-      - name: Install dependencies
+      - name: Install dependencies (${{ matrix.arch }})
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            qemu-aarch64-static /usr/bin/python3 -m pip install --upgrade pip
-            qemu-aarch64-static /usr/bin/python3 -m pip install pyinstaller==6.12.0 -r src/requirements.txt
+            wget http://ports.ubuntu.com/ubuntu-ports/pool/main/p/python3.12/python3.12-minimal_3.12.3-1_arm64.deb
+            mkdir -p arm64-python
+            dpkg-deb -x python3.12-minimal_3.12.3-1_arm64.deb arm64-python
+            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user --upgrade pip
+            qemu-aarch64-static ./arm64-python/usr/bin/python3.12 -m pip install --user pyinstaller==6.12.0 -r src/requirements.txt
           else
             python -m pip install --upgrade pip
             pip install pyinstaller==6.12.0 -r src/requirements.txt
@@ -42,7 +45,7 @@ jobs:
         run: |
           cd src
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            qemu-aarch64-static python3 -m PyInstaller QtTinySA.spec
+            qemu-aarch64-static ../arm64-python/usr/bin/python3.12 -m PyInstaller QtTinySA.spec
           else
             python3 -m PyInstaller QtTinySA.spec
           fi
